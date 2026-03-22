@@ -20,6 +20,3 @@
 ## Visit Online
 🌐 [Try PDF to Excel](https://easyusehub.github.io/PDF-to-Excel/)
 
-## Related Tools
-- 💧 [Add PDF Watermark](https://easyusehub.github.io/Add-PDF-Watermark/)  
-- 🗑️ [Delete PDF Pages](https://easyusehub.github.io/Delete-Pdf-Pages/)
