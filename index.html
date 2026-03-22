@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 PDF to Excel | EasyUseHub</title>
+<style>
+body, html {
+    font-family: 'Segoe UI', sans-serif;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+.container {
+    width: 90%;
+    max-width: 650px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    text-align: center;
+}
+h2 { margin-bottom: 10px; color: #1e293b; }
+p.description {
+    color: #475569;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+    font-style: italic;
+}
+.upload {
+    padding: 25px;
+    border: 3px dashed #9333ea;
+    border-radius: 15px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #9333ea;
+    transition: 0.3s;
+}
+.upload:hover { background: #f5e6fa; transform: scale(1.03); }
+button {
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 10px 3px;
+    background: #9333ea;
+    color: #fff;
+    transition: 0.3s;
+}
+button:hover { background: #7e22ce; }
+#download-btn { display:none; background:#2563eb; }
+#download-btn:hover { background:#1e40af; }
+#status { margin-top: 10px; color: #475569; }
+.bottom-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+.bottom-buttons a {
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #fff;
+    font-weight: 600;
+}
+.bottom-buttons a:hover { background: #3b82f6; }
+.ad-placeholder {
+    margin: 15px 0;
+    padding: 15px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    color: #999;
+    font-size: 0.9rem;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>📊 PDF to Excel</h2>
+<p class="description">
+Convert your PDF tables to Excel (.xlsx) instantly. Upload PDF and download Excel file with one click.
+</p>
+
+<div class="ad-placeholder">Ad Placeholder</div>
+
+<div class="upload" onclick="document.getElementById('file').click()">📁 Upload PDF</div>
+<input type="file" id="file" accept="application/pdf" hidden>
+
+<button id="convert-btn">Convert to Excel</button>
+<button id="download-btn">📥 Download Excel</button>
+<p id="status">No file selected</p>
+
+<div class="bottom-buttons">
+<a href="https://easyusehub.github.io/Add-PDF-Watermark/" target="_blank">💧 Add Watermark</a>
+<a href="https://easyusehub.github.io/Delete-Pdf-Pages/" target="_blank">🗑️ Delete Pages</a>
+<a href="https://easyusehub.blogspot.com/?m=1" target="_blank">🏠 Home</a>
+</div>
+
+<div class="ad-placeholder">Ad Placeholder</div>
+</div>
+
+<!-- JS Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+let file = null;
+
+document.getElementById('file').addEventListener('change', (e)=>{
+    file = e.target.files[0];
+    if(!file) return;
+    if(file.size>30*1024*1024){ alert('Max 30MB'); return; }
+    document.getElementById('status').textContent = `✔ ${file.name} selected`;
+});
+
+document.getElementById('convert-btn').addEventListener('click', async ()=>{
+    if(!file){ alert('Upload PDF first'); return; }
+    document.getElementById('status').textContent = 'Converting PDF to Excel...';
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+
+    let workbook = XLSX.utils.book_new();
+
+    for(let i=1;i<=pdfDoc.numPages;i++){
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        // Convert each line to array
+        const rows = textContent.items.map(item => [item.str]);
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(workbook, worksheet, `Page ${i}`);
+    }
+
+    const wbout = XLSX.write(workbook, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+
+    const downloadBtn = document.getElementById('download-btn');
+    downloadBtn.style.display='block';
+    downloadBtn.onclick = ()=>{ 
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name.replace(/\.pdf$/i, '.xlsx');
+        a.click();
+    };
+
+    document.getElementById('status').textContent = '✔ Conversion complete! Download your Excel.';
+});
+</script>
+
+</body>
+</html>
