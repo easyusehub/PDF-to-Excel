@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💧 Add PDF Watermark | EasyUseHub</title>
+<title>📊 PDF to Excel | EasyUseHub</title>
 <style>
 body, html {
     font-family: 'Segoe UI', sans-serif;
@@ -41,21 +41,13 @@ p.description {
     transition: 0.3s;
 }
 .upload:hover { background: #f5e6fa; transform: scale(1.03); }
-input, select {
-    padding: 10px;
-    margin: 6px 0;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
 button {
     padding: 12px;
     border: none;
     border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    margin: 6px 3px;
+    margin: 10px 3px;
     background: #9333ea;
     color: #fff;
     transition: 0.3s;
@@ -64,22 +56,6 @@ button:hover { background: #7e22ce; }
 #download-btn { display:none; background:#2563eb; }
 #download-btn:hover { background:#1e40af; }
 #status { margin-top: 10px; color: #475569; }
-.pages-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px,1fr));
-    gap: 10px;
-    margin-top: 15px;
-}
-.page-item {
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    padding: 5px;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.page-item.selected { border-color: #ef4444; background: #fee2e2; }
-canvas { width:100%; height:auto; border:1px solid #ccc; border-radius:8px; }
 .bottom-buttons {
     display: flex;
     justify-content: center;
@@ -109,9 +85,9 @@ canvas { width:100%; height:auto; border:1px solid #ccc; border-radius:8px; }
 <body>
 
 <div class="container">
-<h2>💧 Add PDF Watermark</h2>
+<h2>📊 PDF to Excel</h2>
 <p class="description">
-Select pages, enter watermark text, choose color & position, and download instantly.
+Convert your PDF tables to Excel (.xlsx) instantly. Upload PDF and download Excel file with one click.
 </p>
 
 <div class="ad-placeholder">Ad Placeholder</div>
@@ -119,27 +95,8 @@ Select pages, enter watermark text, choose color & position, and download instan
 <div class="upload" onclick="document.getElementById('file').click()">📁 Upload PDF</div>
 <input type="file" id="file" accept="application/pdf" hidden>
 
-<input type="text" id="watermark-text" placeholder="Enter watermark text">
-<input type="color" id="watermark-color" value="#999999">
-<select id="watermark-position">
-    <option value="" disabled selected>Select Position</option>
-    <option value="center">Center</option>
-    <option value="top-left">Top Left</option>
-    <option value="top-right">Top Right</option>
-    <option value="bottom-left">Bottom Left</option>
-    <option value="bottom-right">Bottom Right</option>
-</select>
-
-<div style="margin:10px 0;">
-<button onclick="selectAll()">All Select</button>
-<button onclick="deselectAll()">All Deselect</button>
-</div>
-
-<div id="pages-container" class="pages-grid"></div>
-
-<button onclick="addWatermark()">Add Watermark</button>
-<button id="download-btn">📥 Download PDF</button>
-
+<button id="convert-btn">Convert to Excel</button>
+<button id="download-btn">📥 Download Excel</button>
 <p id="status">No file selected</p>
 
 <!-- Bottom Buttons: Only All PDF Tools and Home -->
@@ -151,15 +108,52 @@ Select pages, enter watermark text, choose color & position, and download instan
 <div class="ad-placeholder">Ad Placeholder</div>
 </div>
 
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<!-- JS Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-// JS code same as previous, handling upload, select pages, add watermark, download
-let file=null, pdfDocLib=null;
-const selectAll = ()=>document.querySelectorAll('.page-item').forEach(d=>d.classList.add('selected'));
-const deselectAll = ()=>document.querySelectorAll('.page-item').forEach(d=>d.classList.remove('selected'));
-// Add watermark function remains same as before
+let file = null;
+
+document.getElementById('file').addEventListener('change', (e)=>{
+    file = e.target.files[0];
+    if(!file) return;
+    if(file.size>30*1024*1024){ alert('Max 30MB'); return; }
+    document.getElementById('status').textContent = `✔ ${file.name} selected`;
+});
+
+document.getElementById('convert-btn').addEventListener('click', async ()=>{
+    if(!file){ alert('Upload PDF first'); return; }
+    document.getElementById('status').textContent = 'Converting PDF to Excel...';
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+
+    let workbook = XLSX.utils.book_new();
+
+    for(let i=1;i<=pdfDoc.numPages;i++){
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const rows = textContent.items.map(item => [item.str]);
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(workbook, worksheet, `Page ${i}`);
+    }
+
+    const wbout = XLSX.write(workbook, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+
+    const downloadBtn = document.getElementById('download-btn');
+    downloadBtn.style.display='block';
+    downloadBtn.onclick = ()=>{ 
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name.replace(/\.pdf$/i, '.xlsx');
+        a.click();
+    };
+
+    document.getElementById('status').textContent = '✔ Conversion complete! Download your Excel.';
+});
 </script>
 
 </body>
